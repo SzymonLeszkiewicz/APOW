@@ -229,15 +229,203 @@ def print_info(img):
         print('CHANNEL3 min/max', img[:, :, 2].min(), img[:, :, 2].max())
 
 
-def detect_biox(img_lab, kernel_size=3, iterations=1, thresh=180):
+def detect_espu(img_lab, morph=True, kernel_size=3, iterations=1, thresh_val=180):
     l, a, b = cv2.split(img_lab)
-    ret, thresh = cv2.threshold(b, 180, 255, cv2.THRESH_BINARY)
-    kernel = np.ones((3,3), np.uint8)
-    erosion = cv2.erode(thresh, kernel, iterations=1)
-    display_images([thresh, erosion], ['binary', 'erosion'], gray=True)
+    ret, thresh = cv2.threshold(b, thresh_val, 255, cv2.THRESH_BINARY)
+
+    if morph:
+        kernel = np.ones((kernel_size, kernel_size), np.uint8)
+        thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel, iterations=iterations)
+    post = cv2.erode(thresh, kernel, iterations=1)
+    contours, hierarchy = cv2.findContours(post, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
+    pills = [c for c in contours if cv2.contourArea(c) > 90]
+
+    img_rgb = cv2.cvtColor(img_lab, cv2.COLOR_LAB2RGB)
+    img = cv2.drawContours(img_rgb.copy(), pills, -1, (0, 255, 0), 3)
+
+    for c in pills:
+        x, y, w, h = cv2.boundingRect(c)
+        cv2.rectangle(img_rgb, (x, y), (x + w, y + h), (0, 255, 0), 2)
+    plt.subplots(1, 1, figsize=(12, 8))[1].imshow(img_rgb)
+    plt.show()
+
+
+def try_morpho(img, kernel_size=3, iterations=1):
+    mrpho_op = [cv2.MORPH_OPEN, cv2.MORPH_CLOSE, cv2.MORPH_GRADIENT, cv2.MORPH_TOPHAT, cv2.MORPH_BLACKHAT]
+    mrpho_name = ['Open', 'Close', 'Gradient', 'TopHat', 'BlackHat']
+    kernel = np.ones((kernel_size, kernel_size), np.uint8)
+    dilate = cv2.dilate(img, kernel, iterations=iterations)
+    display_images([img, dilate], [f'Original', f'Dilate'], gray=True)
+    erode = cv2.erode(img, kernel, iterations=iterations)
+    display_images([img, erode], [f'Original', f'Erode'], gray=True)
+    for op in enumerate(mrpho_op):
+        img_morpho = cv2.morphologyEx(img, op[1], kernel, iterations=iterations)
+        display_images([img, img_morpho], [f'Original', f'{mrpho_name[op[0]]}'], gray=True)
+
+
+def detect_carbon(
+        img: np.ndarray,
+        kernel_size: int = 3,
+        iterations: int = 3,
+        thresh_val: int = 60):
+    """
+    Funkcja wykrywająca tabletki w obrazie
+    :param img: obraz wejściowy
+    :param kernel_size: rozmiar jądra
+    :param iterations: liczba iteracji
+    :param thresh_val: wartość progu
+    :return: lista obrazów z wykrytymi tabletkami
+    """
+    L, A, B = cv2.split(img)
+    ret, thresh = cv2.threshold(L, thresh_val, 255, cv2.THRESH_BINARY_INV)
+    kernel = np.ones((kernel_size, kernel_size), np.uint8)
+    thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel, iterations=iterations)
+    plt.subplots(1, 1, figsize=(12, 8))[1].imshow(thresh, cmap='gray')
+    plt.show()
+
+    contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    pills = [c for c in contours if cv2.contourArea(c) > 4000]
+    img_rgb = cv2.cvtColor(img, cv2.COLOR_LAB2RGB)
+    for c in pills:
+        x, y, w, h = cv2.boundingRect(c)
+        cv2.rectangle(img_rgb, (x, y), (x + w, y + h), (0, 255, 0), 2)
+    plt.subplots(1, 1, figsize=(12, 8))[1].imshow(img_rgb)
+    plt.show()
+    return [img_rgb]
+
+
+def detect_carbon(
+        img: np.ndarray,
+        kernel_size: int = 3,
+        iterations: int = 3,
+        thresh_val: int = 60):
+    """
+    Funkcja wykrywająca tabletki w obrazie
+    :param img: obraz wejściowy
+    :param kernel_size: rozmiar jądra
+    :param iterations: liczba iteracji
+    :param thresh_val: wartość progu
+    :return: lista obrazów z wykrytymi tabletkami
+    """
+    L, A, B = cv2.split(img)
+    ret, thresh = cv2.threshold(L, thresh_val, 255, cv2.THRESH_BINARY_INV)
+    kernel = np.ones((kernel_size, kernel_size), np.uint8)
+    thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel, iterations=iterations)
+    # distance transform
+    dist_transform = cv2.distanceTransform(thresh, cv2.DIST_L1, 5)
+    dist_transform = cv2.normalize(dist_transform, None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8U)
+    display_images([thresh, dist_transform], ['thresh', 'dist_transform'], 1)
+    thresh = dist_transform
+
+    contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    pills = [c for c in contours if cv2.contourArea(c) > 4000]
+    # draw contours
+    img2 = cv2.drawContours(img.copy(), pills, -1, (0, 255, 0), 3)
+    display_images([img, img2], ['original', 'contours'], 1)
+
+    img_rgb = cv2.cvtColor(img, cv2.COLOR_LAB2RGB)
+    for c in pills:
+        x, y, w, h = cv2.boundingRect(c)
+        cv2.rectangle(img_rgb, (x, y), (x + w, y + h), (0, 255, 0), 2)
+    plt.subplots(1, 1, figsize=(12, 8))[1].imshow(img_rgb)
+    plt.show()
+    return [img_rgb]
+
+
+def get_mask(img):
+    img_lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
+    L, A, B = cv2.split(img_lab)
+    ret, thresh = cv2.threshold(A, 135, 255, cv2.THRESH_BINARY_INV)
+    return thresh
+
+
+def apply_mask(img, mask):
+    return cv2.bitwise_and(img, img, mask=mask)
+
+
+def get_box_contours(img):
+    img_lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
+    L, A, B = cv2.split(img_lab)
+    mask = get_mask(img)
+    result = apply_mask(img, mask)
+    result = cv2.cvtColor(result, cv2.COLOR_BGR2GRAY)
+    contours, hierarchy = cv2.findContours(result, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    box = [c for c in contours if cv2.contourArea(c) > 100000]
+    return box
+
+
+def crop_box(img, angel=21, w = -50, h = -50):
+    box_con = get_box_contours(img)
+    rect = cv2.boundingRect(box_con[0])
+    image = img
+    # Pobierz punkty narożników prostokąta
+    x, y, width, height = rect
+
+    rect_pts = np.array([[x, y], [x + width, y], [x + width, y + height], [x, y + height]], dtype=np.float32)
+
+    center = np.array([x + width / 2, y + height / 2])
+
+    # Oblicz macierz rotacji
+    rotation_matrix = cv2.getRotationMatrix2D(tuple(center), angel, 1.0)  # 1.0 oznacza brak skalowania
+    rotated = cv2.warpAffine(image, rotation_matrix, (image.shape[1], image.shape[0]))  # rotated to obraz po rotacji
+    rotated_crop = cv2.getRectSubPix(rotated, (width, height), tuple(center))
+
+    box_con = get_box_contours(rotated_crop)
+    rect = cv2.boundingRect(box_con[0])
+    image = rotated_crop
+    # Pobierz punkty narożników prostokąta
+    x, y, width, height = rect
+    x -= w
+    y -= h
+    width +=w*2
+    height +=h*2
+    rect_pts = np.array([[x, y], [x + width, y], [x + width, y + height], [x, y + height]], dtype=np.float32)
+
+    center = np.array([x + width / 2, y + height / 2])
+    angel = 0
+
+    # Oblicz macierz rotacji
+    rotation_matrix = cv2.getRotationMatrix2D(tuple(center), angel, 1.0)  # 1.0 oznacza brak skalowania
+    rotated = cv2.warpAffine(image, rotation_matrix, (image.shape[1], image.shape[0]))  # rotated to obraz po rotacji
+
+    rotated_crop = cv2.getRectSubPix(rotated, (width, height), tuple(center))
+    return rotated_crop
+
+
+
+#%%
+def detect_keto(img_bgr):
+    img_hsv = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2HSV)
+    H, S, V = cv2.split(img_hsv)
+    ret, thresh = cv2.threshold(S, 28, 255, cv2.THRESH_BINARY_INV)
+    # morpho open
+    thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, np.ones((4, 4), np.uint8), iterations=2)
+    # distans transform
+    dist_transform = cv2.distanceTransform(thresh, cv2.DIST_L1, 3)
+    thresh2 = cv2.normalize(dist_transform, None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8U)
+    display_images([thresh2], ['thresh'], 1)
+    # erode
+    thresh2 = cv2.erode(thresh2, np.ones((3, 3), np.uint8), iterations=7)
+    display_images([thresh2], ['thresh'], 1)
+    contours, hierarchy = cv2.findContours(thresh2, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    biox = [c for c in contours if cv2.contourArea(c) > 1000]
+    # draw contours
+    img = img_bgr.copy()
+    for c in biox:
+        text = 'KETO'
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        font_scale = 1
+        color = (0, 255, 0)
+        thickness = 2
+        text_size = cv2.getTextSize(text, font, font_scale, thickness)[0]
+        x, y, w, h = cv2.boundingRect(c)
+        cv2.putText(img, text, (x + w // 2 - text_size[0] // 2, y + h // 2 + text_size[1] // 2), font, font_scale, color, thickness)
+    return img
+
 
 
 if __name__ == "__main__":
     pass
 
-#%%
+# %%
