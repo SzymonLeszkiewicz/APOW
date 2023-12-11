@@ -229,6 +229,69 @@ def print_info(img):
         print('CHANNEL3 min/max', img[:, :, 2].min(), img[:, :, 2].max())
 
 
+def calculate_aspect_ratio(ellipse):
+    len1, len2 = ellipse[1]
+    return len1 / len2
+
+
+def get_mask_pills(img):
+    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    H, S, V = cv2.split(hsv)
+    ret1, th1 = cv2.threshold(H, 80, 255, cv2.THRESH_BINARY_INV)
+    return th1
+
+
+def get_mask_espu(img, morph=True, kernel_size=3, iterations=1, thresh_val=180):
+    img_lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
+    l, a, b = cv2.split(img_lab)
+    ret, thresh = cv2.threshold(b, thresh_val, 255, cv2.THRESH_BINARY_INV)
+
+    if morph:
+        kernel = np.ones((kernel_size, kernel_size), np.uint8)
+        thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel, iterations=iterations)
+    return thresh
+
+def blue_xy(img):
+    L, A, B = cv2.split(cv2.cvtColor(img, cv2.COLOR_BGR2LAB))
+    ret1,th1 = cv2.threshold(A,165,255,cv2.THRESH_BINARY)
+    kernel = np.ones((3,3), np.uint8)
+    erode = cv2.erode(th1, kernel, iterations=3)
+    close  = erode
+    # close = cv2.morphologyEx(erode, cv2.MORPH_CLOSE, kernel, iterations=1)
+    contours = cv2.findContours(close, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)[0]
+    contours = [c for c in contours if (len(c) > 5 and cv2.contourArea(c) > 300)]
+    blue_xy = []
+    for c in contours:
+        # feat elipses
+        ellipse = cv2.fitEllipse(c)
+        x, y = ellipse[0]
+        blue_xy.append((x, y))
+    return blue_xy
+
+
+
+def detect_whites(img):
+    img = cv2.GaussianBlur(img, (1, 1), 0)
+    mask = get_mask_pills(img)
+    result = apply_mask(img, mask)
+
+    L, A, B = cv2.split(cv2.cvtColor(result, cv2.COLOR_BGR2LAB))
+    ret1, th1 = cv2.threshold(L, 125, 255, cv2.THRESH_BINARY)
+    espu = get_mask_espu(img)
+    result2 = apply_mask(th1, espu)
+    kernel = np.ones((3, 3), np.uint8)
+    result2 = cv2.morphologyEx(result2, cv2.MORPH_OPEN, kernel, iterations=11)
+    # erode
+    kernel = np.ones((3, 3), np.uint8)
+    result2 = cv2.erode(result2, kernel, iterations=13)
+    # morpho close
+    kernel = np.ones((1, 1), np.uint8)
+    result2 = cv2.morphologyEx(result2, cv2.MORPH_CLOSE, kernel, iterations=1)
+    # result2 = cv2.distanceTransform(result2, cv2.DIST_L2, 5)
+    # result2 = cv2.normalize(result2, result2, 0, 1.0, cv2.NORM_MINMAX, dtype=cv2.CV_8U)
+    return result2
+
+
 def detect_espu(img_lab, morph=True, kernel_size=3, iterations=1, thresh_val=180):
     l, a, b = cv2.split(img_lab)
     ret, thresh = cv2.threshold(b, thresh_val, 255, cv2.THRESH_BINARY)
@@ -355,7 +418,8 @@ def get_box_contours(img):
     return box
 
 
-def crop_box(img, angel=21, w = -50, h = -50):
+def crop_box(img, angel=21, w=-50, h=-50):
+    img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
     box_con = get_box_contours(img)
     rect = cv2.boundingRect(box_con[0])
     image = img
@@ -378,8 +442,8 @@ def crop_box(img, angel=21, w = -50, h = -50):
     x, y, width, height = rect
     x -= w
     y -= h
-    width +=w*2
-    height +=h*2
+    width += w * 2
+    height += h * 2
     rect_pts = np.array([[x, y], [x + width, y], [x + width, y + height], [x, y + height]], dtype=np.float32)
 
     center = np.array([x + width / 2, y + height / 2])
@@ -393,8 +457,7 @@ def crop_box(img, angel=21, w = -50, h = -50):
     return rotated_crop
 
 
-
-#%%
+# %%
 def detect_keto(img_bgr):
     img_hsv = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2HSV)
     H, S, V = cv2.split(img_hsv)
@@ -404,25 +467,23 @@ def detect_keto(img_bgr):
     # distans transform
     dist_transform = cv2.distanceTransform(thresh, cv2.DIST_L1, 3)
     thresh2 = cv2.normalize(dist_transform, None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8U)
-    display_images([thresh2], ['thresh'], 1)
     # erode
     thresh2 = cv2.erode(thresh2, np.ones((3, 3), np.uint8), iterations=7)
-    display_images([thresh2], ['thresh'], 1)
     contours, hierarchy = cv2.findContours(thresh2, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-    biox = [c for c in contours if cv2.contourArea(c) > 1000]
-    # draw contours
-    img = img_bgr.copy()
-    for c in biox:
-        text = 'KETO'
-        font = cv2.FONT_HERSHEY_SIMPLEX
-        font_scale = 1
-        color = (0, 255, 0)
-        thickness = 2
-        text_size = cv2.getTextSize(text, font, font_scale, thickness)[0]
-        x, y, w, h = cv2.boundingRect(c)
-        cv2.putText(img, text, (x + w // 2 - text_size[0] // 2, y + h // 2 + text_size[1] // 2), font, font_scale, color, thickness)
-    return img
-
+    keto = [c for c in contours if cv2.contourArea(c) > 1000]
+    return keto
+    # # draw contours
+    # img = img_bgr.copy()
+    # for c in biox:
+    #     text = 'KETO'
+    #     font = cv2.FONT_HERSHEY_SIMPLEX
+    #     font_scale = 1
+    #     color = (0, 255, 0)
+    #     thickness = 2
+    #     text_size = cv2.getTextSize(text, font, font_scale, thickness)[0]
+    #     x, y, w, h = cv2.boundingRect(c)
+    #     cv2.putText(img, text, (x + w // 2 - text_size[0] // 2, y + h // 2 + text_size[1] // 2), font, font_scale, color, thickness)
+    # return img
 
 
 if __name__ == "__main__":
