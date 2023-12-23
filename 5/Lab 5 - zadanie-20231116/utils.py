@@ -1,3 +1,4 @@
+#%%
 import matplotlib.pyplot as plt
 import numpy as np
 import cv2
@@ -15,29 +16,27 @@ def show_img_hsv(img):
     plt.show()
 
 
+
 def display_images(images, titles=None, gray=False, figsize=(25, 25)):
     if len(images) == 1:
-        plt.figure(figsize=(20, 20))
+        plt.figure(figsize=figsize)
         if gray:
             plt.imshow(images[0], cmap='gray')
         else:
-            plt.imshow(images[0])
+            img = cv2.cvtColor(images[0], cv2.COLOR_BGR2RGB)
+            plt.imshow(img)
         plt.axis('off')
+        plt.title(titles[0] if titles else '', fontsize=20)
         plt.show()
     else:
         fig, axes = plt.subplots(1, len(images), figsize=figsize)
         for i, img in enumerate(images):
             if gray:
                 axes[i].imshow(img, cmap='gray')
-                try:
-                    axes[i].set_title(titles[i])
-                except IndexError:
-                    print('IndexError')
-                except TypeError:
-                    print('TypeError')
-                except Exception as e:
-                    print(e)
+                axes[i].set_title(titles[i] if titles else '')
             else:
+                img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                axes[i].set_title(titles[i] if titles else '', fontsize=20)
                 axes[i].imshow(img)
             axes[i].axis('off')
         plt.show()
@@ -56,6 +55,14 @@ def hist_rgb(img):
     axes[2].set_title('Blue')
     plt.show()
 
+
+def analyze_channels(img, img_lab, img_hsv):
+    plot_rgb(img)
+    hist_rgb(img)
+    show_hsv(img_hsv)
+    hist_hsv(img_hsv)
+    show_lab(img_lab)
+    hist_lab(img_lab)
 
 def build_bimodal(size, mean1, mean2, sigma1, sigma2, ratio=0.5):
     x = np.random.normal(mean1, sigma1, int(size * ratio))
@@ -210,7 +217,6 @@ def hist_lab_normalized(lab_img):
     plt.show()
 
 
-def analyze_channels(img, img_lab, img_hsv):
     plot_rgb(img)
     hist_rgb(img)
     show_hsv(img_hsv)
@@ -251,12 +257,13 @@ def get_mask_espu(img, morph=True, kernel_size=3, iterations=1, thresh_val=180):
         thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel, iterations=iterations)
     return thresh
 
+
 def blue_xy(img):
     L, A, B = cv2.split(cv2.cvtColor(img, cv2.COLOR_BGR2LAB))
-    ret1,th1 = cv2.threshold(A,165,255,cv2.THRESH_BINARY)
-    kernel = np.ones((3,3), np.uint8)
+    ret1, th1 = cv2.threshold(A, 165, 255, cv2.THRESH_BINARY)
+    kernel = np.ones((3, 3), np.uint8)
     erode = cv2.erode(th1, kernel, iterations=3)
-    close  = erode
+    close = erode
     # close = cv2.morphologyEx(erode, cv2.MORPH_CLOSE, kernel, iterations=1)
     contours = cv2.findContours(close, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)[0]
     contours = [c for c in contours if (len(c) > 5 and cv2.contourArea(c) > 300)]
@@ -267,7 +274,6 @@ def blue_xy(img):
         x, y = ellipse[0]
         blue_xy.append((x, y))
     return blue_xy
-
 
 
 def detect_whites(img):
@@ -397,9 +403,9 @@ def detect_carbon(
 
 
 def get_mask(img):
-    img_lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
+    img_lab = cv2.cvtColor(img, cv2.COLOR_RGB2LAB)
     L, A, B = cv2.split(img_lab)
-    ret, thresh = cv2.threshold(A, 135, 255, cv2.THRESH_BINARY_INV)
+    ret, thresh = cv2.threshold(A, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
     return thresh
 
 
@@ -408,24 +414,24 @@ def apply_mask(img, mask):
 
 
 def get_box_contours(img):
-    img_lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
+    img_lab = cv2.cvtColor(img, cv2.COLOR_RGB2LAB)
     L, A, B = cv2.split(img_lab)
     mask = get_mask(img)
     result = apply_mask(img, mask)
     result = cv2.cvtColor(result, cv2.COLOR_BGR2GRAY)
     contours, hierarchy = cv2.findContours(result, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     box = [c for c in contours if cv2.contourArea(c) > 100000]
+    temp = cv2.drawContours(img.copy(), box, -1, (0, 255, 0), 3)
     return box
 
 
 def crop_box(img, angel=21, w=-50, h=-50):
-    img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
     box_con = get_box_contours(img)
     rect = cv2.boundingRect(box_con[0])
     image = img
     # Pobierz punkty narożników prostokąta
     x, y, width, height = rect
-
+    temp = cv2.drawContours(image.copy(), box_con, -1, (0, 255, 0), 3)
     rect_pts = np.array([[x, y], [x + width, y], [x + width, y + height], [x, y + height]], dtype=np.float32)
 
     center = np.array([x + width / 2, y + height / 2])
