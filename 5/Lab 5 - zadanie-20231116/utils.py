@@ -23,8 +23,7 @@ def display_images(images, titles=None, gray=False, figsize=(25, 25)):
         if gray:
             plt.imshow(images[0], cmap='gray')
         else:
-            img = cv2.cvtColor(images[0], cv2.COLOR_BGR2RGB)
-            plt.imshow(img)
+            plt.imshow(images[0])
         plt.axis('off')
         plt.title(titles[0] if titles else '', fontsize=20)
         plt.show()
@@ -35,7 +34,6 @@ def display_images(images, titles=None, gray=False, figsize=(25, 25)):
                 axes[i].imshow(img, cmap='gray')
                 axes[i].set_title(titles[i] if titles else '')
             else:
-                img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
                 axes[i].set_title(titles[i] if titles else '', fontsize=20)
                 axes[i].imshow(img)
             axes[i].axis('off')
