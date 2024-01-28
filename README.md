@@ -1,7 +1,7 @@
-# Image and video analysis and processing
+# Image and video analysis and processing 📷
 
 This repository contains the code for the course Image and video analysis and processing (2023/24) of the Master in
-Artificial Intelligence at the Wrocław University of Science and Technology. The course primarily focuses on classical 
+Artificial Intelligence at the Wrocław University of Science and Technology 🧑‍🎓. The course primarily focuses on classical 
 computer vision techniques and image processing. The repository is organized into eight labs, each dedicated to a 
 different topic. These labs leverage the 
 [OpenCV](https://opencv.org/)
@@ -24,23 +24,23 @@ Artificial Intelligence at the Wrocław University of Science and Technology.
 ### Notebooks:
 
 1. **Basics of openCV**:
-    * **[`Podstawy_OpenCV.ipynb`](1%2FPodstawy_OpenCV.ipynb)** - Basic of openCV.
+    * [`Podstawy_OpenCV.ipynb`](1%2FPodstawy_OpenCV.ipynb) - Basic of openCV.
 
 
 2. **Binarization, image filtering:**
-    * **[`lab2-zadanie.ipynb`](2%2Flab2-zadanie.ipynb)** - Global thresholding & adaptive thresholding.
+    * [`lab2-zadanie.ipynb`](2%2Flab2-zadanie.ipynb) - Global thresholding & adaptive thresholding.
     * <img src="media/2_hsv1.png" alt="Lab 2 Image" style="zoom:28.5%;"/>
     * <img src="media/2_bin.png" alt="Lab 2 Image" style="zoom:28%;"/>  
 
 
 3. **Edge detection, histogram equalization & matching:**
-    * **[`zadanie.ipynb`](3%2Fzadanie.ipynb)** - Edge detection, Histogram matching.
+    * [`zadanie.ipynb`](3%2Fzadanie.ipynb) - Edge detection, Histogram matching.
         * <img src="media/3_edges.png" alt="Lab 3 Edges Image" style="zoom:32.5%;"/>
         * <img src="media/3_matching.png" alt="Lab 3 Matching Image" style="zoom:52%;"/>
 
 
 4. **Slic superpixels, image segmentation:**
-    * **[`zadanie.ipynb`](4%2Fzadanie.ipynb)** - Slic superpixels, image segmentation.
+    * [`zadanie.ipynb`](4%2Fzadanie.ipynb) - Slic superpixels, image segmentation.
         * <img src="media/4_slic.png" alt="Lab 4 Slic Image" style="zoom:42%;"/>
         * <img src="media/4_hare.png" alt="Lab 4 Hare Image" style="zoom:42%;"/>
 
@@ -56,10 +56,10 @@ Artificial Intelligence at the Wrocław University of Science and Technology.
 
 
 6. **SIFT and Image Stitching:**
-    * [Lab6.1_zadanie.ipynb](6%2FLab%206%20-%20zadania-20231208%2FLab6.1_zadanie.ipynb) - Overview of SIFT parameters
+    * [`Lab6.1_zadanie.ipynb`](6%2FLab%206%20-%20zadania-20231208%2FLab6.1_zadanie.ipynb) - Overview of SIFT parameters
       and their impact on key point detection and matching results.
         * <img src="media/6_coke_matching.png" alt="lena_kp.png" style="zoom:24.5%;" />
-    * [Lab6.2_zadanie.ipynb](6%2FLab%206%20-%20zadania-20231208%2FLab6.2_zadanie.ipynb) - Overview of SIFT parameters
+    * [`Lab6.2_zadanie.ipynb`](6%2FLab%206%20-%20zadania-20231208%2FLab6.2_zadanie.ipynb) - Overview of SIFT parameters
       and their impact on key point detection and matching results.
 
 
