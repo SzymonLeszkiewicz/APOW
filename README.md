@@ -64,10 +64,14 @@ Artificial Intelligence at the Wrocław University of Science and Technology.
 
 
 7. **Detection using Faster-RCNN:**
-    * To be added
+   - Detection and classification of chess pieces.
+      - <img src="7/media/det1.png" alt="chessdetection" style="zoom:32.6%;"/>
+   - Parameters overview.
+      - <img src="7/media/det+prop.png" alt="proposals" style="zoom:38.6%;"/>
 
 8. **Optical Flow:**
-    * To be added
+   * <img src="8/media/dis2.png" alt="discovery traj" style="zoom:35.6%;"/>
+   * <img src="8/media/shot_det.png" alt="windowsize" style="zoom:35.6%;"/>
 
 ## Technologies
 
