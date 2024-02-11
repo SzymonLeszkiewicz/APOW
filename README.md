@@ -66,6 +66,9 @@ Artificial Intelligence at the Wrocław University of Science and Technology.
 7. **Detection using Faster-RCNN:**
     * To be added
 
+8. **Optical Flow:**
+    * To be added
+
 ## Technologies
 
 * Python - version 3.8.5

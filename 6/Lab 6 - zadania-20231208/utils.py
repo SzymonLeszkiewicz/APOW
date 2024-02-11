@@ -15,7 +15,8 @@ def show_img_hsv(img):
     plt.show()
 
 def display_images(images, titles=None, gray=False, figsize=(25, 25)):
-    if len(images) == 1:
+    if len(images) == 1 or isinstance(images, np.ndarray):
+        print(isinstance(images, np.ndarray))
         plt.figure(figsize=figsize)
         if gray:
             plt.imshow(images[0], cmap='gray')
